@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/functionalRandomForest.py.iml" filepath="$PROJECT_DIR$/.idea/functionalRandomForest.py.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../functionalRandomForest/.idea/functionalRandomForest.iml" filepath="$PROJECT_DIR$/../functionalRandomForest/.idea/functionalRandomForest.iml" />
     </modules>
   </component>
 </project>
