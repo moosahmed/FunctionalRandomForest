@@ -6,28 +6,39 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import accuracy_score
 
 
-def test_tree_bags(learning_groups, learning_data, testing_groups, testing_data, n_trees, rf_type='classification',
-                   oob_score=False, max_features="auto", class_weight=None, feature_importance=False):
+def test_tree_bags(learning_groups, learning_data, testing_groups, testing_data, rf_type='classification', n_trees=10,
+                   n_predictors="auto", oob_score=False, class_weight=None, feature_importance=False):
     """
-    X,Y are determined in .fit()
-    number of predictors(max_features) is by default set to: max_features=sqrt(n_features) only if unspecified by the user. if specified use that int
+    This takes at minimum 4 inputs, your learning group and data as well as testing group and data.
 
-    dont know for sure how to include categorical vector
-
-    surrogate? is it the same as criterion or sample weight in fit(). not sure.
-
-    prior can be set to "balanced_subsample"
+    rf_type can be chosen to be either classification or regression
+    Read RandomForestClassifier documentation for more info on n_trees(n_estimators), n_predictors(max_features),
+    oob_score, and class_weight.
+    If a dictionary of feature importance is required set feature_importance to True
+    
+    This function will build the appropriate Random Forest based on parameters provided.
+    It will fit the RF on your learning set.
+    
+    This function returns: 
+    1) Predicted classes which are made using your testing data
+    2) Overall accuracy of the RF in predicting your testing groups
+    3) Predicted scores which are computed using the testing data
+    4) Group accuracies for every group in your testing group
+    
+    Optionally, the function returns:
+    5) Score of the training data set obtained using the out-of-bag estimate
+    6) A dictionary of the features and how important they are to the RF model 
     """
     if rf_type == 'regression':
-        tree_bag = RandomForestRegressor(n_estimators=n_trees, max_features=max_features, oob_score=oob_score)
+        tree_bag = RandomForestRegressor(n_estimators=n_trees, max_features=n_predictors, oob_score=oob_score)
     else:
-        tree_bag = RandomForestClassifier(n_estimators=n_trees, max_features=max_features, oob_score=oob_score,
+        tree_bag = RandomForestClassifier(n_estimators=n_trees, max_features=n_predictors, oob_score=oob_score,
                                           class_weight=class_weight)
 
     tree_bag.fit(learning_data, learning_groups)
-    predicted_groups = tree_bag.predict(testing_data)
+    predicted_classes = tree_bag.predict(testing_data)
+    overall_accuracy = accuracy_score(testing_groups, predicted_classes)
     predicted_scores = tree_bag.predict_log_proba(testing_data)
-    overall_accuracy = accuracy_score(testing_groups, predicted_groups)
 
     return_list = []
 
@@ -42,4 +53,4 @@ def test_tree_bags(learning_groups, learning_data, testing_groups, testing_data,
             # check that it is getting the correct headers from learning set
         return_list.append(features_dict)
 
-    return predicted_groups, predicted_scores, overall_accuracy, *return_list
+    return predicted_classes, predicted_scores, overall_accuracy, *return_list
