@@ -44,11 +44,14 @@ forest = RandomForestClassifier().fit(Xx_train, np.ravel(yy_train))
 yy_predict = forest.predict(Xx_test)
 print(accuracy_score(yy_predict, yy_test))
 
+
+# To check how each feature contributes to a model
 features_dict = {}
 for i in range(len(forest.feature_importances_)):
     features_dict[new_data_cols[i]] = forest.feature_importances_[i]
 print(sorted(features_dict.items(), key=lambda x: x[1], reverse=True))
 
+# hyperparameterization
 gridsearch_forest = RandomForestClassifier()
 
 params = {
