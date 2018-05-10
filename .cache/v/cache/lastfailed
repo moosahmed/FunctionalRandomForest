@@ -1,0 +1,4 @@
+{
+  "FRF.py::test_class_tree_bags": true,
+  "FRF.py::test_regress_tree_bags": true
+}
