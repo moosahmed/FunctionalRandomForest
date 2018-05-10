@@ -7,6 +7,31 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error, r2_score
 
 
+class CallForest(object):
+    def __init__(self, rf_type, n_trees, n_predictors, oob_score, feature_importance, **kwargs):
+        self.n_trees = n_trees
+        self.n_predictors = n_predictors
+        self.oob_score = oob_score
+        self.feature_importance = feature_importance
+        self.isclassifier = rf_type is 'classifier'
+        if self.isclassifier:
+            self.called_method = test_class_tree_bags
+            self.class_weight = kwargs['class_weight']
+        else:
+            self.called_method = test_regress_tree_bags
+
+    def train_method(self, X_train, y_train, X_test, y_test):
+        if self.isclassifier:
+            return self.called_method(learning_data=X_train, learning_groups=y_train, testing_data=X_test,
+                                      testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
+                                      oob_score=self.oob_score, feature_importance=self.feature_importance,
+                                      class_weight=self.class_weight)
+        else:
+            return self.called_method(learning_data=X_train, learning_groups=y_train, testing_data=X_test,
+                                      testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
+                                      oob_score=self.oob_score, feature_importance=self.feature_importance)
+
+
 def proximity_matrix(model, x, normalize=True):      
 
     terminals = model.apply(x)
@@ -56,7 +81,6 @@ def test_class_tree_bags(learning_data, learning_groups, testing_data, testing_g
     # TODO: vectorize this and figure out group accuracies. metrics.classification_report
     # individual_accuracy = predicted_classes == testing_groups
 
-
     return_list = []
 
     if oob_score:
@@ -70,8 +94,10 @@ def test_class_tree_bags(learning_data, learning_groups, testing_data, testing_g
             # check that it is getting the correct headers from learning set
         return_list.append(features_dict)
 
-
-    return predicted_classes, predicted_scores, overall_accuracy  # TODO: How to return optional variables
+    if return_list:
+        return predicted_classes, predicted_scores, overall_accuracy, *return_list
+    else:
+        return predicted_classes, predicted_scores, overall_accuracy
 
 
 def test_regress_tree_bags(learning_data, learning_groups, testing_data, testing_groups, n_trees=10,
@@ -95,8 +121,7 @@ def test_regress_tree_bags(learning_data, learning_groups, testing_data, testing
 
     Optionally, the function returns:
     5) Score of the training data set obtained using the out-of-bag estimate
-    6) A dictionary of the features and how important they are to the RF model 
-    :param class_weight: 
+    6) A dictionary of the features and how important they are to the RF model
     """
     tree_bag = RandomForestRegressor(n_estimators=n_trees, max_features=n_predictors, oob_score=oob_score)
 
@@ -119,39 +144,10 @@ def test_regress_tree_bags(learning_data, learning_groups, testing_data, testing
             # check that it is getting the correct headers from learning set
         return_list.append(features_dict)
 
-    return predicted_classes, mae, r2, individual_diff  # TODO: How to return optional variables
-
-
-# def build_kfolds(df, data_cols, target_cols, n_splits=10, n_repeats=3, n_trees=10, n_predictors="auto", oob_score=False,
-#                  class_weight=None, feature_importance=False):
-# from functools import partial
-# train_func = partial(test_class_tree_bags, n_trees=n_trees, n_predictors=n_predictors,
-#         oob_score=oob_score, class_weight=class_weight,
-#         feature_importance=feature_importance)
-
-class CallForest(object):
-    def __init__(self, rf_type, n_trees, n_predictors, oob_score, feature_importance, **kwargs):
-        self.n_trees = n_trees
-        self.n_predictors = n_predictors
-        self.oob_score = oob_score
-        self.feature_importance = feature_importance
-        self.isclassifier = rf_type is 'classifier'
-        if self.isclassifier:
-            self.called_method = test_class_tree_bags
-            self.class_weight = kwargs['class_weight']
-        else:
-            self.called_method = test_regress_tree_bags
-
-    def train_method(self, X_train, y_train, X_test, y_test):
-        if self.isclassifier:
-            return self.called_method(learning_data=X_train, learning_groups=y_train, testing_data=X_test,
-                                      testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
-                                      oob_score=self.oob_score, feature_importance=self.feature_importance,
-                                      class_weight=self.class_weight)
-        else:
-            return self.called_method(learning_data=X_train, learning_groups=y_train, testing_data=X_test,
-                                      testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
-                                      oob_score=self.oob_score, feature_importance=self.feature_importance)
+    if return_list:
+        return predicted_classes, mae, r2, individual_diff, *return_list
+    else:
+        return predicted_classes, mae, r2, individual_diff
 
 
 def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repeats=3):
@@ -165,8 +161,9 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
-        forest_params.train_method(X_train, y_train, X_test, y_test)
+        print(forest_params.train_method(X_train, y_train, X_test, y_test))
         # summary[test_index] = forest_stats
+        # TODO: make the numpy array hashable
     return summary
 
 
