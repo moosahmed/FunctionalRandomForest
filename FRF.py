@@ -32,7 +32,14 @@ class CallForest(object):
                                       oob_score=self.oob_score, feature_importance=self.feature_importance)
 
 
-def proximity_matrix(model, x, normalize=True):      
+def get_feature_importance(model, learning_data):
+    features_dict = {}
+    for i in range(len(model.feature_importances_)):
+        features_dict[list(learning_data)[i]] = model.feature_importances_[i]
+    return sorted(features_dict.items(), key=lambda x: x[1], reverse=True)
+
+
+def proximity_matrix(model, x, normalize=True):
 
     terminals = model.apply(x)
     n_trees = terminals.shape[1]
@@ -88,16 +95,9 @@ def test_class_tree_bags(learning_data, learning_groups, testing_data, testing_g
         return_list.append(oob_pred)
 
     if feature_importance:
-        features_dict = {}
-        for i in range(len(tree_bag.feature_importances_)):
-            features_dict[learning_data[i]] = tree_bag.feature_importances_[i]
-            # check that it is getting the correct headers from learning set
-        return_list.append(features_dict)
+        return_list.append(get_feature_importance(tree_bag, learning_data))
 
-    if return_list:
-        return predicted_classes, predicted_scores, overall_accuracy, *return_list
-    else:
-        return predicted_classes, predicted_scores, overall_accuracy
+    return predicted_classes, predicted_scores, overall_accuracy, (*return_list)
 
 
 def test_regress_tree_bags(learning_data, learning_groups, testing_data, testing_groups, n_trees=10,
@@ -144,10 +144,10 @@ def test_regress_tree_bags(learning_data, learning_groups, testing_data, testing
             # check that it is getting the correct headers from learning set
         return_list.append(features_dict)
 
-    if return_list:
-        return predicted_classes, mae, r2, individual_diff, *return_list
-    else:
-        return predicted_classes, mae, r2, individual_diff
+    # if return_list:
+    return predicted_classes, mae, r2, individual_diff, (*return_list)
+    # else:
+    #     return predicted_classes, mae, r2, individual_diff
 
 
 def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repeats=3):
@@ -182,4 +182,4 @@ df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/bala
 data_cols = ['left_weight', 'right_weight', 'left_distance', 'right_distance']
 target_cols = ['class_name']
 
-interface(df, data_cols, target_cols)
+interface(df, data_cols, target_cols, oob_score=True, feature_importance=True)
