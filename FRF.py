@@ -42,10 +42,12 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
     Returns a full summary of all folds and their results
     """
+    df['predicted_classes'] = np.nan
+    df['predicted_scores'] = np.nan
+    df['predicted_scores2'] = np.nan
     X = df[data_cols]
     y = df[target_cols]
     rskf = RepeatedStratifiedKFold(n_splits, n_repeats, random_state=int(timeit.default_timer()))
-    summary = {}
     for train_index, test_index in rskf.split(X, y):
         # print("TRAIN:", train_index, "TEST:", test_index)
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -53,9 +55,11 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
         # TODO: Fix the associations with the test indicies this is to be done by associating the outputs to all indexs
         # in a vectorized fashion
-        forest_stats = forest_params.train_method(X_train, y_train, X_test, y_test)
-        summary[np.array_str(test_index)] = forest_stats
-    return summary
+        predicted_classes, predicted_scores, overall_accuracy = forest_params.train_method(X_train, y_train, X_test, y_test)
+        df['predicted_classes'].iloc[test_index] = predicted_classes
+        # df['predicted_scores'].iloc[test_index] = df['predicted_scores'].iloc[test_index] + predicted_scores
+        df['predicted_scores2'].iloc[test_index] = list(predicted_scores)
+        # print(df['class_name'].iloc[test_index])
 
 
 def get_feature_importance(model, training_data):
@@ -182,7 +186,7 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
     forest_params = CallForest(rf_type=rf_type, n_trees=n_trees, n_predictors=n_predictors, oob_score=oob_score,
                                feature_importance=feature_importance, class_weight=class_weight)
 
-    print(build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats))
+    build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
 
 
 column_names = ['class_name', 'left_weight', 'left_distance', 'right_weight', 'right_distance']
@@ -192,3 +196,4 @@ data_cols = ['left_weight', 'right_weight', 'left_distance', 'right_distance']
 target_cols = ['class_name']
 
 interface(df, data_cols, target_cols)
+print(df)
