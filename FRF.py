@@ -51,9 +51,10 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
-        print(forest_params.train_method(X_train, y_train, X_test, y_test))
-        # summary[test_index] = forest_stats
-        # TODO: make the numpy array hashable
+        # TODO: Fix the associations with the test indicies this is to be done by associating the outputs to all indexs
+        # in a vectorized fashion
+        forest_stats = forest_params.train_method(X_train, y_train, X_test, y_test)
+        summary[np.array_str(test_index)] = forest_stats
     return summary
 
 
@@ -179,9 +180,9 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
               feature_importance=False, class_weight=None, n_kfold_splits=10, n_kfold_repeats=3):
 
     forest_params = CallForest(rf_type=rf_type, n_trees=n_trees, n_predictors=n_predictors, oob_score=oob_score,
-                               class_weight=class_weight, feature_importance=feature_importance)
-    out = build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
-    print(out)
+                               feature_importance=feature_importance, class_weight=class_weight)
+
+    print(build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats))
 
 
 column_names = ['class_name', 'left_weight', 'left_distance', 'right_weight', 'right_distance']
@@ -190,4 +191,4 @@ df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/bala
 data_cols = ['left_weight', 'right_weight', 'left_distance', 'right_distance']
 target_cols = ['class_name']
 
-interface(df, data_cols, target_cols, oob_score=True, feature_importance=True)
+interface(df, data_cols, target_cols)

@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="22de6b9e-cfbd-4d01-ad31-df35c81995cd" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/FRF.py" afterPath="$PROJECT_DIR$/FRF.py" />
-      <change beforePath="$PROJECT_DIR$/testingRF.py" afterPath="$PROJECT_DIR$/testingRF.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -51,14 +50,14 @@
       <file leaf-file-name="FRF.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/FRF.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="595">
-              <caret line="43" column="7" lean-forward="true" selection-start-line="43" selection-start-column="7" selection-end-line="43" selection-end-column="7" />
+            <state relative-caret-position="392">
+              <caret line="193" column="36" lean-forward="false" selection-start-line="193" selection-start-column="36" selection-end-line="193" selection-end-column="36" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
                 <element signature="e#1762#2231#1" expanded="false" />
-                <element signature="e#2881#3219#1" expanded="false" />
-                <element signature="e#4022#4986#1" expanded="false" />
-                <element signature="e#6059#7044#1" expanded="false" />
+                <element signature="e#3009#3347#1" expanded="false" />
+                <element signature="e#4150#5114#1" expanded="false" />
+                <element signature="e#6187#7172#1" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -423,7 +422,7 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32997763" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21700224" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3691275" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32997763" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -465,9 +464,9 @@
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <element signature="e#1762#2231#1" expanded="false" />
-            <element signature="e#2881#3219#1" expanded="false" />
-            <element signature="e#4022#4986#1" expanded="false" />
-            <element signature="e#6059#7044#1" expanded="false" />
+            <element signature="e#3009#3347#1" expanded="false" />
+            <element signature="e#4150#5114#1" expanded="false" />
+            <element signature="e#6187#7172#1" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -489,9 +488,9 @@
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <element signature="e#1762#2231#1" expanded="false" />
-            <element signature="e#2881#3219#1" expanded="false" />
-            <element signature="e#4022#4986#1" expanded="false" />
-            <element signature="e#6059#7044#1" expanded="false" />
+            <element signature="e#3009#3347#1" expanded="false" />
+            <element signature="e#4150#5114#1" expanded="false" />
+            <element signature="e#6187#7172#1" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -551,14 +550,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FRF.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="595">
-          <caret line="43" column="7" lean-forward="true" selection-start-line="43" selection-start-column="7" selection-end-line="43" selection-end-column="7" />
+        <state relative-caret-position="392">
+          <caret line="193" column="36" lean-forward="false" selection-start-line="193" selection-start-column="36" selection-end-line="193" selection-end-column="36" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <element signature="e#1762#2231#1" expanded="false" />
-            <element signature="e#2881#3219#1" expanded="false" />
-            <element signature="e#4022#4986#1" expanded="false" />
-            <element signature="e#6059#7044#1" expanded="false" />
+            <element signature="e#3009#3347#1" expanded="false" />
+            <element signature="e#4150#5114#1" expanded="false" />
+            <element signature="e#6187#7172#1" expanded="false" />
           </folding>
         </state>
       </provider>
