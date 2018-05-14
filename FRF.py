@@ -42,9 +42,9 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
     Returns a full summary of all folds and their results
     """
-    df['predicted_classes'] = np.nan
-    df['predicted_scores'] = np.nan
-    df['predicted_scores2'] = np.nan
+    df['predicted_classes'] = np.empty((len(df), 0)).tolist()
+    df['predicted_scores'] = np.zeros(len(df))
+    # df['predicted_scores'] = np.empty()
     X = df[data_cols]
     y = df[target_cols]
     rskf = RepeatedStratifiedKFold(n_splits, n_repeats, random_state=int(timeit.default_timer()))
@@ -56,10 +56,13 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
         # TODO: Fix the associations with the test indicies this is to be done by associating the outputs to all indexs
         # in a vectorized fashion
         predicted_classes, predicted_scores, overall_accuracy = forest_params.train_method(X_train, y_train, X_test, y_test)
-        df['predicted_classes'].iloc[test_index] = predicted_classes
-        # df['predicted_scores'].iloc[test_index] = df['predicted_scores'].iloc[test_index] + predicted_scores
-        df['predicted_scores2'].iloc[test_index] = list(predicted_scores)
-        # print(df['class_name'].iloc[test_index])
+
+        list_loc = 0
+        for idx in test_index:
+            df['predicted_classes'].iloc[idx].append(predicted_classes[list_loc])
+            list_loc += 1
+        print(predicted_scores)
+        # df['predicted_scores'].iloc[test_index] = predicted_scores
 
 
 def get_feature_importance(model, training_data):
@@ -121,7 +124,8 @@ def test_class_tree_bags(training_data, training_groups, testing_data, testing_g
     tree_bag.fit(training_data, training_groups)
     predicted_classes = tree_bag.predict(testing_data)
     overall_accuracy = accuracy_score(testing_groups, predicted_classes)
-    predicted_scores = tree_bag.predict_log_proba(testing_data)
+    # predicted_scores = tree_bag.predict_log_proba(testing_data)
+    predicted_scores = tree_bag.predict_proba(testing_data)
     # TODO: vectorize this and figure out group accuracies. metrics.classification_report
     # individual_accuracy = predicted_classes == testing_groups
 
@@ -166,7 +170,7 @@ def test_regress_tree_bags(training_data, training_groups, testing_data, testing
     predicted_classes = tree_bag.predict(testing_data)
     mae = mean_absolute_error(testing_groups, predicted_classes)
     r2 = r2_score(testing_groups, predicted_classes)
-    individual_diff = predicted_classes - testing_groups
+    individual_diff = predicted_classes - testing_groups  # TODO: Check this
 
     return_list = []
 
