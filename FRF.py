@@ -38,31 +38,37 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
     It also inherits user specified parameters for the rf model.
 
     This sets up the RepeatedStratifiedKFold func, and makes a test and train split based on the parameters provided.
-    For each fold it runs the model and creates a summary of the test indicies used and the rf models outputs.
-
-    Returns a full summary of all folds and their results
+    For each fold it runs the model then takes the rf models:
+        a) individual level outputs:
+            inserts them into new columns of the df at the specific indices used for testing that fold.
+            e.g. all indices will have a value for predicted_class and predicted_score per repetition.
+        b) overall summary outputs:
+            Returns an average of the summary output. e.g. overall_accuracy
     """
+    # Initializing outputs
     df['predicted_classes'] = np.empty((len(df), 0)).tolist()
-    df['predicted_scores'] = np.zeros(len(df))
-    # df['predicted_scores'] = np.empty()
+    df['predicted_scores'] = np.empty((len(df), 0)).tolist()
+    overall_accuracy_sum = 0
+
     X = df[data_cols]
     y = df[target_cols]
     rskf = RepeatedStratifiedKFold(n_splits, n_repeats, random_state=int(timeit.default_timer()))
     for train_index, test_index in rskf.split(X, y):
-        # print("TRAIN:", train_index, "TEST:", test_index)
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
-        # TODO: Fix the associations with the test indicies this is to be done by associating the outputs to all indexs
-        # in a vectorized fashion
-        predicted_classes, predicted_scores, overall_accuracy = forest_params.train_method(X_train, y_train, X_test, y_test)
-
+        predicted_classes, predicted_scores, overall_accuracy = forest_params.train_method(X_train, y_train, X_test,
+                                                                                           y_test)
         list_loc = 0
         for idx in test_index:
             df['predicted_classes'].iloc[idx].append(predicted_classes[list_loc])
+            df['predicted_scores'].iloc[idx].append(predicted_scores[list_loc].max())
             list_loc += 1
-        print(predicted_scores)
-        # df['predicted_scores'].iloc[test_index] = predicted_scores
+
+        overall_accuracy_sum += overall_accuracy
+
+    allfolds_overall_accuracy = overall_accuracy_sum/(n_splits*n_repeats)
+    return allfolds_overall_accuracy
 
 
 def get_feature_importance(model, training_data):
@@ -124,8 +130,8 @@ def test_class_tree_bags(training_data, training_groups, testing_data, testing_g
     tree_bag.fit(training_data, training_groups)
     predicted_classes = tree_bag.predict(testing_data)
     overall_accuracy = accuracy_score(testing_groups, predicted_classes)
-    # predicted_scores = tree_bag.predict_log_proba(testing_data)
-    predicted_scores = tree_bag.predict_proba(testing_data)
+    predicted_scores = tree_bag.predict_log_proba(testing_data)
+    # predicted_scores = tree_bag.predict_proba(testing_data)
     # TODO: vectorize this and figure out group accuracies. metrics.classification_report
     # individual_accuracy = predicted_classes == testing_groups
 
@@ -190,7 +196,9 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
     forest_params = CallForest(rf_type=rf_type, n_trees=n_trees, n_predictors=n_predictors, oob_score=oob_score,
                                feature_importance=feature_importance, class_weight=class_weight)
 
-    build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
+    allfolds_overall_accuracy = build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits,
+                                    n_repeats=n_kfold_repeats)
+    print(allfolds_overall_accuracy)
 
 
 column_names = ['class_name', 'left_weight', 'left_distance', 'right_weight', 'right_distance']
