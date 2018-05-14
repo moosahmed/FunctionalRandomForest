@@ -49,6 +49,7 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
     df['predicted_classes'] = np.empty((len(df), 0)).tolist()
     df['predicted_scores'] = np.empty((len(df), 0)).tolist()
     overall_accuracy_sum = 0
+    oob_score_sum = 0
 
     X = df[data_cols]
     y = df[target_cols]
@@ -57,18 +58,49 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
-        predicted_classes, predicted_scores, overall_accuracy = forest_params.train_method(X_train, y_train, X_test,
-                                                                                           y_test)
+        if forest_params.oob_score and forest_params.feature_importance:
+            predicted_classes, predicted_scores, overall_accuracy, oob_score, feature_importance =\
+                forest_params.train_method(X_train, y_train, X_test, y_test)
+
+            oob_score_sum += oob_score
+
+        elif forest_params.oob_score and not forest_params.feature_importance:
+            predicted_classes, predicted_scores, overall_accuracy, oob_score =\
+                forest_params.train_method(X_train, y_train, X_test, y_test)
+
+            oob_score_sum += oob_score
+
+        elif forest_params.feature_importance and not forest_params.oob_score:
+            predicted_classes, predicted_scores, overall_accuracy, feature_importance =\
+                forest_params.train_method(X_train, y_train, X_test, y_test)
+            print(feature_importance)
+
+        else:
+            predicted_classes, predicted_scores, overall_accuracy =\
+                forest_params.train_method(X_train, y_train, X_test, y_test)
+
         list_loc = 0
         for idx in test_index:
             df['predicted_classes'].iloc[idx].append(predicted_classes[list_loc])
             df['predicted_scores'].iloc[idx].append(predicted_scores[list_loc].max())
             list_loc += 1
-
+            
         overall_accuracy_sum += overall_accuracy
-
     allfolds_overall_accuracy = overall_accuracy_sum/(n_splits*n_repeats)
-    return allfolds_overall_accuracy
+
+    if forest_params.oob_score and forest_params.feature_importance:
+        allfolds_oob_score = oob_score_sum / (n_splits * n_repeats)
+        return allfolds_overall_accuracy, allfolds_oob_score
+
+    elif forest_params.oob_score and not forest_params.feature_importance:
+        allfolds_oob_score = oob_score_sum / (n_splits * n_repeats)
+        return allfolds_overall_accuracy, allfolds_oob_score
+
+    elif forest_params.feature_importance and not forest_params.oob_score:
+        print("NOPE")
+
+    else:
+        return allfolds_overall_accuracy
 
 
 def get_feature_importance(model, training_data):
@@ -131,7 +163,6 @@ def test_class_tree_bags(training_data, training_groups, testing_data, testing_g
     predicted_classes = tree_bag.predict(testing_data)
     overall_accuracy = accuracy_score(testing_groups, predicted_classes)
     predicted_scores = tree_bag.predict_log_proba(testing_data)
-    # predicted_scores = tree_bag.predict_proba(testing_data)
     # TODO: vectorize this and figure out group accuracies. metrics.classification_report
     # individual_accuracy = predicted_classes == testing_groups
 
@@ -196,9 +227,15 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
     forest_params = CallForest(rf_type=rf_type, n_trees=n_trees, n_predictors=n_predictors, oob_score=oob_score,
                                feature_importance=feature_importance, class_weight=class_weight)
 
-    allfolds_overall_accuracy = build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits,
+    if oob_score:
+        allfolds_overall_accuracy, allfolds_oob_score = build_kfolds(df, data_cols, target_cols, forest_params,
+                                                                     n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
+        print('Accuracy:', allfolds_overall_accuracy, 'Oob Score:', allfolds_oob_score)
+
+    else:
+        allfolds_overall_accuracy = build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits,
                                     n_repeats=n_kfold_repeats)
-    print(allfolds_overall_accuracy)
+        print('Accuracy:', allfolds_overall_accuracy)
 
 
 column_names = ['class_name', 'left_weight', 'left_distance', 'right_weight', 'right_distance']
@@ -207,5 +244,5 @@ df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/bala
 data_cols = ['left_weight', 'right_weight', 'left_distance', 'right_distance']
 target_cols = ['class_name']
 
-interface(df, data_cols, target_cols)
+interface(df, data_cols, target_cols, oob_score=True)
 print(df)
