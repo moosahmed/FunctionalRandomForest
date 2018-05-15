@@ -50,13 +50,14 @@
       <file leaf-file-name="FRF.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/FRF.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1813">
-              <caret line="93" column="4" lean-forward="true" selection-start-line="93" selection-start-column="4" selection-end-line="93" selection-end-column="4" />
+            <state relative-caret-position="-1796">
+              <caret line="92" column="47" lean-forward="false" selection-start-line="92" selection-start-column="47" selection-end-line="92" selection-end-column="47" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
-                <element signature="e#5782#6120#1" expanded="false" />
-                <element signature="e#6950#7914#1" expanded="false" />
-                <element signature="e#8987#9972#1" expanded="false" />
+                <element signature="e#1762#2479#1" expanded="false" />
+                <element signature="e#5649#5987#1" expanded="false" />
+                <element signature="e#6899#7863#1" expanded="false" />
+                <element signature="e#8932#9917#1" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -80,6 +81,7 @@
       <find>traino</find>
       <find>learning</find>
       <find>lambda</find>
+      <find>allfolds_overall_accuracy</find>
     </findStrings>
     <replaceStrings>
       <replace>predicted_classes</replace>
@@ -88,6 +90,7 @@
       <replace>rf_type</replace>
       <replace>forest_params</replace>
       <replace>training</replace>
+      <replace>all_accuracies</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -493,9 +496,10 @@
           <caret line="193" column="49" lean-forward="true" selection-start-line="193" selection-start-column="49" selection-end-line="193" selection-end-column="49" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#5782#6120#1" expanded="false" />
-            <element signature="e#6950#7914#1" expanded="false" />
-            <element signature="e#8987#9972#1" expanded="false" />
+            <element signature="e#1762#2479#1" expanded="false" />
+            <element signature="e#5649#5987#1" expanded="false" />
+            <element signature="e#6899#7863#1" expanded="false" />
+            <element signature="e#8932#9917#1" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -516,9 +520,10 @@
           <caret line="15" column="32" lean-forward="false" selection-start-line="15" selection-start-column="32" selection-end-line="15" selection-end-column="32" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#5782#6120#1" expanded="false" />
-            <element signature="e#6950#7914#1" expanded="false" />
-            <element signature="e#8987#9972#1" expanded="false" />
+            <element signature="e#1762#2479#1" expanded="false" />
+            <element signature="e#5649#5987#1" expanded="false" />
+            <element signature="e#6899#7863#1" expanded="false" />
+            <element signature="e#8932#9917#1" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -539,9 +544,10 @@
           <caret line="15" column="32" lean-forward="false" selection-start-line="15" selection-start-column="32" selection-end-line="15" selection-end-column="32" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#5782#6120#1" expanded="false" />
-            <element signature="e#6950#7914#1" expanded="false" />
-            <element signature="e#8987#9972#1" expanded="false" />
+            <element signature="e#1762#2479#1" expanded="false" />
+            <element signature="e#5649#5987#1" expanded="false" />
+            <element signature="e#6899#7863#1" expanded="false" />
+            <element signature="e#8932#9917#1" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -599,13 +605,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FRF.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1813">
-          <caret line="93" column="4" lean-forward="true" selection-start-line="93" selection-start-column="4" selection-end-line="93" selection-end-column="4" />
+        <state relative-caret-position="-1796">
+          <caret line="92" column="47" lean-forward="false" selection-start-line="92" selection-start-column="47" selection-end-line="92" selection-end-column="47" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#5782#6120#1" expanded="false" />
-            <element signature="e#6950#7914#1" expanded="false" />
-            <element signature="e#8987#9972#1" expanded="false" />
+            <element signature="e#1762#2479#1" expanded="false" />
+            <element signature="e#5649#5987#1" expanded="false" />
+            <element signature="e#6899#7863#1" expanded="false" />
+            <element signature="e#8932#9917#1" expanded="false" />
           </folding>
         </state>
       </provider>
