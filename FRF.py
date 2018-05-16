@@ -127,12 +127,11 @@ def get_feature_importance(model, training_data):
     for i in range(len(model.feature_importances_)):
         features_dict[list(training_data)[i]] = model.feature_importances_[i]
     return features_dict
-    # return sorted(features_dict.items(), key=lambda x: x[1], reverse=True)
 
 
-def proximity_matrix(model, x, normalize=True):
+def proximity_matrix(model, data, normalize=True):
     # TODO: Every fold will have a prox mat (output to ber similar to accuracies)
-    terminals = model.apply(x)
+    terminals = model.apply(data)
     n_trees = terminals.shape[1]
     a = terminals[:, 0]
     prox_mat = 1 * np.equal.outer(a, a)
@@ -176,9 +175,10 @@ def test_class_tree_bags(training_data, training_groups, testing_data, testing_g
     predicted_classes = tree_bag.predict(testing_data)
     overall_accuracy = accuracy_score(testing_groups, predicted_classes)
     predicted_scores = tree_bag.predict_proba(testing_data)
-    # TODO: vectorize this and figure out group accuracies. metrics.classification_report
+    # TODO: figure out group accuracies. metrics.classification_report
     individual_accuracy = predicted_classes == testing_groups.T.values
-    # individual_accuracy = individual_accuracy.astype(int)
+    print(training_data)
+    print(proximity_matrix(tree_bag, training_data))
 
     return_list = []
 
@@ -221,7 +221,7 @@ def test_regress_tree_bags(training_data, training_groups, testing_data, testing
     predicted_classes = tree_bag.predict(testing_data)
     mae = mean_absolute_error(testing_groups, predicted_classes)
     r2 = r2_score(testing_groups, predicted_classes)
-    individual_diff = predicted_classes - testing_groups  # TODO: Check this
+    individual_diff = predicted_classes - testing_groups.T.values  # TODO: Check this
 
     return_list = []
 
