@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 import timeit
+import warnings
 
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error, r2_score
+from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error, r2_score, precision_recall_fscore_support
+from sklearn.utils.multiclass import unique_labels
 
 
 class CallForest(object):
@@ -133,6 +135,84 @@ def get_feature_importance(model, training_data):
     return features_dict
 
 
+def group_accuracy(y_true, y_pred, labels=None, target_names=None,
+                          sample_weight=None):
+    """This is edited from sklearn.metrics.classification_report
+    Build a pandas df showing the main classification metrics
+    Parameters
+    ----------
+    y_true : 1d array-like, or label indicator array / sparse matrix
+        Ground truth (correct) target values.
+    y_pred : 1d array-like, or label indicator array / sparse matrix
+        Estimated targets as returned by a classifier.
+    labels : array, shape = [n_labels]
+        Optional list of label indices to include in the report.
+    target_names : list of strings
+        Optional display names matching the labels (same order).
+    sample_weight : array-like of shape = [n_samples], optional
+        Sample weights.
+    Returns
+    -------
+    group_accuracies : pandas df
+        Summary of the precision, recall, F1 score for each class.
+        The df contains averages are a prevalence-weighted macro-average across
+        classes (equivalent to :func:`precision_recall_fscore_support` with
+        ``average='weighted'``).
+        Note that in binary classification, recall of the positive class
+        is also known as "sensitivity"; recall of the negative class is
+        "specificity".
+    Examples
+    --------
+    >>> y_true = [0, 1, 2, 2, 2]
+    >>> y_pred = [0, 0, 2, 2, 1]
+    >>> target_names = ['class 0', 'class 1', 'class 2']
+    >>> print(group_accuracy(y_true, y_pred, target_names=target_names))
+                 precision    recall  f1-score   support
+        class 0       0.50      1.00      0.67         1
+        class 1       0.00      0.00      0.00         1
+        class 2       1.00      0.67      0.80         3
+    avg / total       0.70      0.60      0.61         5
+    """
+
+    if labels is None:
+        labels = unique_labels(y_true, y_pred)
+    else:
+        labels = np.asarray(labels)
+
+    if target_names is not None and len(labels) != len(target_names):
+        warnings.warn(
+            "labels size, {0}, does not match size of target_names, {1}"
+            .format(len(labels), len(target_names))
+        )
+
+    last_line_heading = 'avg / total'
+
+    if target_names is None:
+        target_names = [u'%s' % l for l in labels]
+
+    target_names.append(last_line_heading)
+
+    headers = ["precision", "recall", "f1-score", "support"]
+    group_accuracies = pd.DataFrame(index=target_names, columns=headers)
+
+    p, r, f1, s = precision_recall_fscore_support(y_true, y_pred,
+                                                  labels=labels,
+                                                  average=None,
+                                                  sample_weight=sample_weight)
+
+    p = np.append(p, np.average(p, weights=s))
+    r = np.append(r, np.average(r, weights=s))
+    f1 = np.append(f1, np.average(f1, weights=s))
+    s = np.append(s, np.sum(s))
+
+    group_accuracies['precision'] = p
+    group_accuracies['recall'] = r
+    group_accuracies['f1-score'] = f1
+    group_accuracies['support'] = s
+
+    return group_accuracies
+
+
 def proximity_matrix(model, data, normalize=True):
     # TODO: Every fold will have a prox mat (output to ber similar to accuracies)
     terminals = model.apply(data)
@@ -182,7 +262,8 @@ def test_class_tree_bags(df, training_data, training_groups, testing_data, testi
     # TODO: figure out group accuracies. metrics.classification_report
     individual_accuracy = predicted_classes == testing_groups.T.values
     prox_mat = proximity_matrix(tree_bag, training_data)
-    classification_report(testing_groups, predicted_classes)
+    group_accuracy(testing_groups, predicted_classes)
+    print(classification_report(testing_groups, predicted_classes))
 
     return_list = []
 
