@@ -6,9 +6,7 @@ import warnings
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import accuracy_score, mean_absolute_error, r2_score, precision_recall_fscore_support
-from sklearn.utils import check_array
 from sklearn.utils.multiclass import unique_labels
-from sklearn.tree._tree import DTYPE
 
 
 class CallForest(object):
@@ -26,14 +24,22 @@ class CallForest(object):
 
     def train_method(self, all_data, X_train, y_train, X_test, y_test):
         if self.isclassifier:
-            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train, testing_data=X_test,
-                                      testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
-                                      oob_score=self.oob_score, feature_importance=self.feature_importance,
+            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train,
+                                      testing_data=X_test,
+                                      testing_groups=y_test,
+                                      n_trees=self.n_trees,
+                                      n_predictors=self.n_predictors,
+                                      oob_score=self.oob_score,
+                                      feature_importance=self.feature_importance,
                                       class_weight=self.class_weight)
         else:
-            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train, testing_data=X_test,
-                                      testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
-                                      oob_score=self.oob_score, feature_importance=self.feature_importance)
+            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train,
+                                      testing_data=X_test,
+                                      testing_groups=y_test,
+                                      n_trees=self.n_trees,
+                                      n_predictors=self.n_predictors,
+                                      oob_score=self.oob_score,
+                                      feature_importance=self.feature_importance)
 
 
 def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repeats=3):
@@ -57,6 +63,7 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
     oob_score_sum = 0
     all_accuracies = []
     all_prox_mat = []
+    all_group_accuracies = []
     feature_importance_sum = {}
 
     X = df[data_cols]
@@ -67,28 +74,28 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
         if forest_params.oob_score and forest_params.feature_importance:
-            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, oob_score, feature_importance = \
-                forest_params.train_method(X, X_train, y_train, X_test, y_test)
+            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy, \
+            oob_score, feature_importance = forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
             oob_score_sum += oob_score
             feature_importance_sum = {k: feature_importance_sum.get(k, 0) + feature_importance.get(k, 0) for k in
                                       set(feature_importance)}
 
         elif forest_params.oob_score and not forest_params.feature_importance:
-            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, oob_score = \
-                forest_params.train_method(X, X_train, y_train, X_test, y_test)
+            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy, \
+            oob_score = forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
             oob_score_sum += oob_score
 
         elif forest_params.feature_importance and not forest_params.oob_score:
-            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, feature_importance = \
-                forest_params.train_method(X, X_train, y_train, X_test, y_test)
+            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy, \
+            feature_importance = forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
             feature_importance_sum = {k: feature_importance_sum.get(k, 0) + feature_importance.get(k, 0) for k in
                                       set(feature_importance)}
 
         else:
-            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat = \
+            predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy = \
                 forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
         list_loc = 0
@@ -101,25 +108,31 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
         all_accuracies.append(overall_accuracy)
         all_prox_mat.append(prox_mat)
+        all_group_accuracies.append(group_accuracy)
 
-    out_df['individual_accuracy'] = out_df['individual_accuracy'].apply(lambda x: sum(x)/len(x))  # Averaging across reps
+    # Averaging across reps
+    out_df['individual_accuracy'] = out_df['individual_accuracy'].apply(lambda x: sum(x) / len(x))
 
     if forest_params.oob_score and forest_params.feature_importance:
         allfolds_oob_score = oob_score_sum / (n_splits * n_repeats)
         allfolds_feature_importance = {k: v / (n_splits * n_repeats) for k, v in feature_importance_sum.items()}
-        return out_df, all_accuracies, all_prox_mat, allfolds_oob_score, \
+
+        return out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score, \
                sorted(allfolds_feature_importance.items(), key=lambda x: x[1], reverse=True)
 
     elif forest_params.oob_score and not forest_params.feature_importance:
         allfolds_oob_score = oob_score_sum / (n_splits * n_repeats)
-        return out_df, all_accuracies, all_prox_mat, allfolds_oob_score
+
+        return out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score
 
     elif forest_params.feature_importance and not forest_params.oob_score:
         allfolds_feature_importance = {k: v / (n_splits * n_repeats) for k, v in feature_importance_sum.items()}
-        return out_df, all_accuracies, all_prox_mat, sorted(allfolds_feature_importance.items(), key=lambda x: x[1], reverse=True)
+        
+        return out_df, all_accuracies, all_prox_mat, all_group_accuracies, \
+               sorted(allfolds_feature_importance.items(), key=lambda x: x[1], reverse=True)
 
     else:
-        return out_df, all_accuracies, all_prox_mat,
+        return out_df, all_accuracies, all_prox_mat, all_group_accuracies
 
 
 def get_feature_importance(model, training_data):
@@ -136,8 +149,8 @@ def get_feature_importance(model, training_data):
     return features_dict
 
 
-def group_accuracy(y_true, y_pred, labels=None, target_names=None,
-                          sample_weight=None):
+def classification_summary(y_true, y_pred, labels=None, target_names=None,
+                           sample_weight=None):
     """This is edited from sklearn.metrics.classification_report
     Build a pandas df showing the main classification metrics
     Parameters
@@ -182,7 +195,7 @@ def group_accuracy(y_true, y_pred, labels=None, target_names=None,
     if target_names is not None and len(labels) != len(target_names):
         warnings.warn(
             "labels size, {0}, does not match size of target_names, {1}"
-            .format(len(labels), len(target_names))
+                .format(len(labels), len(target_names))
         )
 
     last_line_heading = 'avg / total'
@@ -214,7 +227,7 @@ def group_accuracy(y_true, y_pred, labels=None, target_names=None,
 
 
 def proximity_matrix(model, data, normalize=True):
-
+    # TODO: Add Documentation
     terminals = model.apply(data)
     n_trees = terminals.shape[1]
     a = terminals[:, 0]
@@ -230,8 +243,8 @@ def proximity_matrix(model, data, normalize=True):
     return prox_mat
 
 
-def test_class_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10, n_predictors="auto",
-                         oob_score=False, feature_importance=False, class_weight=None):
+def test_class_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10,
+                         n_predictors="auto", oob_score=False, feature_importance=False, class_weight=None):
     """
     This takes at minimum 4 inputs, your training group and data as well as testing group and data.
 
@@ -262,7 +275,7 @@ def test_class_tree_bags(all_data, training_data, training_groups, testing_data,
     # TODO: figure out group accuracies. metrics.classification_report
     individual_accuracy = predicted_classes == testing_groups.T.values
     prox_mat = proximity_matrix(tree_bag, all_data)
-    group_accuracy(testing_groups, predicted_classes)
+    group_accuracy = classification_summary(testing_groups, predicted_classes)
 
     return_list = []
 
@@ -273,7 +286,8 @@ def test_class_tree_bags(all_data, training_data, training_groups, testing_data,
     if feature_importance:
         return_list.append(get_feature_importance(tree_bag, training_data))
 
-    return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, (*return_list)
+    return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy, \
+           (*return_list)
 
 
 def test_regress_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10,
@@ -326,25 +340,42 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
                                feature_importance=feature_importance, class_weight=class_weight)
 
     if oob_score and feature_importance:
-        out_df, all_accuracies, all_prox_mat, allfolds_oob_score, allfolds_feature_importance = \
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score, allfolds_feature_importance = \
             build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
-        print(out_df, 'Accuracy:', all_accuracies, 'Proximity_matrix:', all_prox_mat, 'Oob Score:', allfolds_oob_score,
+        print(out_df,
+              'Accuracy:', all_accuracies,
+              'Proximity_matrix:', all_prox_mat,
+              'Group Accuracies:', all_group_accuracies,
+              'Oob Score:', allfolds_oob_score,
               'Feature Importance:', allfolds_feature_importance)
 
     elif oob_score and not feature_importance:
-        out_df, all_accuracies, all_prox_mat, allfolds_oob_score = \
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score = \
             build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
-        print(out_df, 'Accuracy:', all_accuracies, 'Proximity_matrix:', all_prox_mat, 'Oob Score:', allfolds_oob_score)
+        print(out_df,
+              'Accuracy:', all_accuracies,
+              'Proximity_matrix:', all_prox_mat,
+              'Group Accuracies:', all_group_accuracies,
+              'Oob Score:', allfolds_oob_score)
 
     elif feature_importance and not oob_score:
-        out_df, all_accuracies, all_prox_mat, allfolds_feature_importance = \
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_feature_importance = \
             build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
-        print(out_df, 'Accuracy:', all_accuracies, 'Proximity_matrix:', all_prox_mat, 'Feature Importance:', allfolds_feature_importance)
+        print(out_df,
+              'Accuracy:', all_accuracies,
+              'Proximity_matrix:', all_prox_mat,
+              'Group Accuracies:', all_group_accuracies,
+              'Feature Importance:', allfolds_feature_importance)
 
     else:
-        out_df, all_accuracies, all_prox_mat = build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits,
-                                      n_repeats=n_kfold_repeats)
-        print(out_df, 'Accuracy:', all_accuracies, 'Proximity_matrix:', all_prox_mat)
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies = build_kfolds(df, data_cols, target_cols,
+                                                                                  forest_params,
+                                                                                  n_splits=n_kfold_splits,
+                                                                                  n_repeats=n_kfold_repeats)
+        print(out_df,
+              'Accuracy:', all_accuracies,
+              'Proximity_matrix:', all_prox_mat,
+              'Group Accuracies:', all_group_accuracies)
 
 
 column_names = ['class_name', 'left_weight', 'left_distance', 'right_weight', 'right_distance']
