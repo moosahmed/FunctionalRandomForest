@@ -5,13 +5,14 @@ import warnings
 
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error, r2_score, precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, mean_absolute_error, r2_score, precision_recall_fscore_support
+from sklearn.utils import check_array
 from sklearn.utils.multiclass import unique_labels
+from sklearn.tree._tree import DTYPE
 
 
 class CallForest(object):
-    def __init__(self, df, rf_type, n_trees, n_predictors, oob_score, feature_importance, **kwargs):
-        self.df = df
+    def __init__(self, rf_type, n_trees, n_predictors, oob_score, feature_importance, **kwargs):
         self.n_trees = n_trees
         self.n_predictors = n_predictors
         self.oob_score = oob_score
@@ -23,14 +24,14 @@ class CallForest(object):
         else:
             self.called_method = test_regress_tree_bags
 
-    def train_method(self, X_train, y_train, X_test, y_test):
+    def train_method(self, all_data, X_train, y_train, X_test, y_test):
         if self.isclassifier:
-            return self.called_method(df=self.df, training_data=X_train, training_groups=y_train, testing_data=X_test,
+            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train, testing_data=X_test,
                                       testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
                                       oob_score=self.oob_score, feature_importance=self.feature_importance,
                                       class_weight=self.class_weight)
         else:
-            return self.called_method(df=self.df, training_data=X_train, training_groups=y_train, testing_data=X_test,
+            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train, testing_data=X_test,
                                       testing_groups=y_test, n_trees=self.n_trees, n_predictors=self.n_predictors,
                                       oob_score=self.oob_score, feature_importance=self.feature_importance)
 
@@ -67,7 +68,7 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
         if forest_params.oob_score and forest_params.feature_importance:
             predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, oob_score, feature_importance = \
-                forest_params.train_method(X_train, y_train, X_test, y_test)
+                forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
             oob_score_sum += oob_score
             feature_importance_sum = {k: feature_importance_sum.get(k, 0) + feature_importance.get(k, 0) for k in
@@ -75,20 +76,20 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
         elif forest_params.oob_score and not forest_params.feature_importance:
             predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, oob_score = \
-                forest_params.train_method(X_train, y_train, X_test, y_test)
+                forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
             oob_score_sum += oob_score
 
         elif forest_params.feature_importance and not forest_params.oob_score:
             predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, feature_importance = \
-                forest_params.train_method(X_train, y_train, X_test, y_test)
+                forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
             feature_importance_sum = {k: feature_importance_sum.get(k, 0) + feature_importance.get(k, 0) for k in
                                       set(feature_importance)}
 
         else:
             predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat = \
-                forest_params.train_method(X_train, y_train, X_test, y_test)
+                forest_params.train_method(X, X_train, y_train, X_test, y_test)
 
         list_loc = 0
         for idx in test_index:
@@ -173,7 +174,6 @@ def group_accuracy(y_true, y_pred, labels=None, target_names=None,
         class 2       1.00      0.67      0.80         3
     avg / total       0.70      0.60      0.61         5
     """
-
     if labels is None:
         labels = unique_labels(y_true, y_pred)
     else:
@@ -214,7 +214,7 @@ def group_accuracy(y_true, y_pred, labels=None, target_names=None,
 
 
 def proximity_matrix(model, data, normalize=True):
-    # TODO: Every fold will have a prox mat (output to ber similar to accuracies)
+
     terminals = model.apply(data)
     n_trees = terminals.shape[1]
     a = terminals[:, 0]
@@ -230,7 +230,7 @@ def proximity_matrix(model, data, normalize=True):
     return prox_mat
 
 
-def test_class_tree_bags(df, training_data, training_groups, testing_data, testing_groups, n_trees=10, n_predictors="auto",
+def test_class_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10, n_predictors="auto",
                          oob_score=False, feature_importance=False, class_weight=None):
     """
     This takes at minimum 4 inputs, your training group and data as well as testing group and data.
@@ -261,9 +261,8 @@ def test_class_tree_bags(df, training_data, training_groups, testing_data, testi
     predicted_scores = tree_bag.predict_proba(testing_data)
     # TODO: figure out group accuracies. metrics.classification_report
     individual_accuracy = predicted_classes == testing_groups.T.values
-    prox_mat = proximity_matrix(tree_bag, training_data)
+    prox_mat = proximity_matrix(tree_bag, all_data)
     group_accuracy(testing_groups, predicted_classes)
-    print(classification_report(testing_groups, predicted_classes))
 
     return_list = []
 
@@ -277,7 +276,7 @@ def test_class_tree_bags(df, training_data, training_groups, testing_data, testi
     return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, (*return_list)
 
 
-def test_regress_tree_bags(df, training_data, training_groups, testing_data, testing_groups, n_trees=10,
+def test_regress_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10,
                            n_predictors="auto", oob_score=False, feature_importance=False):
     """
     This takes at minimum 4 inputs, your training group and data as well as testing group and data.
@@ -307,7 +306,7 @@ def test_regress_tree_bags(df, training_data, training_groups, testing_data, tes
     mae = mean_absolute_error(testing_groups, predicted_classes)
     r2 = r2_score(testing_groups, predicted_classes)
     individual_diff = predicted_classes - testing_groups.T.values  # TODO: Check this
-    prox_mat = proximity_matrix(tree_bag, df)
+    prox_mat = proximity_matrix(tree_bag, all_data)
 
     return_list = []
 
