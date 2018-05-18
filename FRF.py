@@ -24,7 +24,9 @@ class CallForest(object):
 
     def train_method(self, all_data, X_train, y_train, X_test, y_test):
         if self.isclassifier:
-            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train,
+            return self.called_method(all_data=all_data,
+                                      training_data=X_train,
+                                      training_groups=y_train,
                                       testing_data=X_test,
                                       testing_groups=y_test,
                                       n_trees=self.n_trees,
@@ -33,7 +35,9 @@ class CallForest(object):
                                       feature_importance=self.feature_importance,
                                       class_weight=self.class_weight)
         else:
-            return self.called_method(all_data=all_data, training_data=X_train, training_groups=y_train,
+            return self.called_method(all_data=all_data,
+                                      training_data=X_train,
+                                      training_groups=y_train,
                                       testing_data=X_test,
                                       testing_groups=y_test,
                                       n_trees=self.n_trees,
@@ -57,9 +61,11 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
     """
     # Initializing outputs
     out_df = pd.DataFrame(index=range(len(df)))
-    out_df['predicted_classes'] = np.empty((len(df), 0)).tolist()
-    out_df['predicted_scores'] = np.empty((len(df), 0)).tolist()
-    out_df['individual_accuracy'] = np.empty((len(df), 0)).tolist()
+    col_names = ['predicted_classes', 'predicted_scores', 'individual_accuracy']
+
+    for col in col_names:
+        out_df[col] = np.empty((len(df), 0)).tolist()
+
     oob_score_sum = 0
     all_accuracies = []
     all_prox_mat = []
@@ -68,6 +74,7 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
     X = df[data_cols]
     y = df[target_cols]
+
     rskf = RepeatedStratifiedKFold(n_splits, n_repeats, random_state=int(timeit.default_timer()))
     for train_index, test_index in rskf.split(X, y):
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
@@ -127,7 +134,7 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
 
     elif forest_params.feature_importance and not forest_params.oob_score:
         allfolds_feature_importance = {k: v / (n_splits * n_repeats) for k, v in feature_importance_sum.items()}
-        
+
         return out_df, all_accuracies, all_prox_mat, all_group_accuracies, \
                sorted(allfolds_feature_importance.items(), key=lambda x: x[1], reverse=True)
 
@@ -149,7 +156,9 @@ def get_feature_importance(model, training_data):
     return features_dict
 
 
-def classification_summary(y_true, y_pred, labels=None, target_names=None,
+def classification_summary(y_true, y_pred,
+                           labels=None,
+                           target_names=None,
                            sample_weight=None):
     """This is edited from sklearn.metrics.classification_report
     Build a pandas df showing the main classification metrics
@@ -227,7 +236,16 @@ def classification_summary(y_true, y_pred, labels=None, target_names=None,
 
 
 def proximity_matrix(model, data, normalize=True):
-    # TODO: Add Documentation
+    """
+    Takes your model and data (usually all your data columns)
+    There is an option to normalize the proximity matrix by dividing by the number of trees.
+
+    For all pairs of samples in your dataset, This iterates over the decision tress in the forest
+    and counts the number of times they fall in the same leaf
+    i.e., the number of times apply gives the same node id for both samples in the pair.
+
+    Returns the proximity matrix
+    """
     terminals = model.apply(data)
     n_trees = terminals.shape[1]
     a = terminals[:, 0]
@@ -243,8 +261,12 @@ def proximity_matrix(model, data, normalize=True):
     return prox_mat
 
 
-def test_class_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10,
-                         n_predictors="auto", oob_score=False, feature_importance=False, class_weight=None):
+def test_class_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups,
+                         n_trees=10,
+                         n_predictors="auto",
+                         oob_score=False,
+                         feature_importance=False,
+                         class_weight=None):
     """
     This takes at minimum 4 inputs, your training group and data as well as testing group and data.
 
@@ -265,14 +287,16 @@ def test_class_tree_bags(all_data, training_data, training_groups, testing_data,
     5) Score of the training data set obtained using the out-of-bag estimate
     6) A dictionary of the features and how important they are to the RF model 
     """
-    tree_bag = RandomForestClassifier(n_estimators=n_trees, max_features=n_predictors, oob_score=oob_score,
+    tree_bag = RandomForestClassifier(n_estimators=n_trees,
+                                      max_features=n_predictors,
+                                      oob_score=oob_score,
                                       class_weight=class_weight)
 
     tree_bag.fit(training_data, training_groups)
     predicted_classes = tree_bag.predict(testing_data)
+
     overall_accuracy = accuracy_score(testing_groups, predicted_classes)
     predicted_scores = tree_bag.predict_proba(testing_data)
-    # TODO: figure out group accuracies. metrics.classification_report
     individual_accuracy = predicted_classes == testing_groups.T.values
     prox_mat = proximity_matrix(tree_bag, all_data)
     group_accuracy = classification_summary(testing_groups, predicted_classes)
@@ -286,12 +310,15 @@ def test_class_tree_bags(all_data, training_data, training_groups, testing_data,
     if feature_importance:
         return_list.append(get_feature_importance(tree_bag, training_data))
 
-    return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy, \
+    return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy,\
            (*return_list)
 
 
-def test_regress_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups, n_trees=10,
-                           n_predictors="auto", oob_score=False, feature_importance=False):
+def test_regress_tree_bags(all_data, training_data, training_groups, testing_data, testing_groups,
+                           n_trees=10,
+                           n_predictors="auto",
+                           oob_score=False,
+                           feature_importance=False):
     """
     This takes at minimum 4 inputs, your training group and data as well as testing group and data.
 
@@ -313,10 +340,13 @@ def test_regress_tree_bags(all_data, training_data, training_groups, testing_dat
     5) Score of the training data set obtained using the out-of-bag estimate
     6) A dictionary of the features and how important they are to the RF model
     """
-    tree_bag = RandomForestRegressor(n_estimators=n_trees, max_features=n_predictors, oob_score=oob_score)
+    tree_bag = RandomForestRegressor(n_estimators=n_trees,
+                                     max_features=n_predictors,
+                                     oob_score=oob_score)
 
     tree_bag.fit(training_data, training_groups)
     predicted_classes = tree_bag.predict(testing_data)
+
     mae = mean_absolute_error(testing_groups, predicted_classes)
     r2 = r2_score(testing_groups, predicted_classes)
     individual_diff = predicted_classes - testing_groups.T.values  # TODO: Check this
@@ -334,14 +364,30 @@ def test_regress_tree_bags(all_data, training_data, training_groups, testing_dat
     return predicted_classes, mae, r2, individual_diff, prox_mat, (*return_list)
 
 
-def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_predictors="auto", oob_score=False,
-              feature_importance=False, class_weight=None, n_kfold_splits=10, n_kfold_repeats=3):
-    forest_params = CallForest(df=df, rf_type=rf_type, n_trees=n_trees, n_predictors=n_predictors, oob_score=oob_score,
-                               feature_importance=feature_importance, class_weight=class_weight)
+def interface(df, data_cols, target_cols,
+              rf_type='classifier',
+              n_trees=10,
+              n_predictors="auto",
+              oob_score=False,
+              feature_importance=False,
+              class_weight=None,
+              n_kfold_splits=10,
+              n_kfold_repeats=3):
+
+    forest_params = CallForest(df=df,
+                               rf_type=rf_type,
+                               n_trees=n_trees,
+                               n_predictors=n_predictors,
+                               oob_score=oob_score,
+                               feature_importance=feature_importance,
+                               class_weight=class_weight)
 
     if oob_score and feature_importance:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score, allfolds_feature_importance = \
-            build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score, allfolds_feature_importance =\
+            build_kfolds(df, data_cols, target_cols, forest_params,
+                         n_splits=n_kfold_splits,
+                         n_repeats=n_kfold_repeats)
+
         print(out_df,
               'Accuracy:', all_accuracies,
               'Proximity_matrix:', all_prox_mat,
@@ -350,8 +396,11 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
               'Feature Importance:', allfolds_feature_importance)
 
     elif oob_score and not feature_importance:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score = \
-            build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score =\
+            build_kfolds(df, data_cols, target_cols, forest_params,
+                         n_splits=n_kfold_splits,
+                         n_repeats=n_kfold_repeats)
+
         print(out_df,
               'Accuracy:', all_accuracies,
               'Proximity_matrix:', all_prox_mat,
@@ -359,8 +408,11 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
               'Oob Score:', allfolds_oob_score)
 
     elif feature_importance and not oob_score:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_feature_importance = \
-            build_kfolds(df, data_cols, target_cols, forest_params, n_splits=n_kfold_splits, n_repeats=n_kfold_repeats)
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_feature_importance =\
+            build_kfolds(df, data_cols, target_cols, forest_params,
+                         n_splits=n_kfold_splits,
+                         n_repeats=n_kfold_repeats)
+
         print(out_df,
               'Accuracy:', all_accuracies,
               'Proximity_matrix:', all_prox_mat,
@@ -368,10 +420,11 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
               'Feature Importance:', allfolds_feature_importance)
 
     else:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies = build_kfolds(df, data_cols, target_cols,
-                                                                                  forest_params,
-                                                                                  n_splits=n_kfold_splits,
-                                                                                  n_repeats=n_kfold_repeats)
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies =\
+            build_kfolds(df, data_cols, target_cols, forest_params,
+                         n_splits=n_kfold_splits,
+                         n_repeats=n_kfold_repeats)
+
         print(out_df,
               'Accuracy:', all_accuracies,
               'Proximity_matrix:', all_prox_mat,
@@ -380,7 +433,9 @@ def interface(df, data_cols, target_cols, rf_type='classifier', n_trees=10, n_pr
 
 column_names = ['class_name', 'left_weight', 'left_distance', 'right_weight', 'right_distance']
 df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/balance-scale/balance-scale.data',
-                 header=None, names=column_names)
+                 header=None,
+                 names=column_names)
+
 data_cols = ['left_weight', 'right_weight', 'left_distance', 'right_distance']
 target_cols = ['class_name']
 
