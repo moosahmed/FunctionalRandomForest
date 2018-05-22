@@ -16,16 +16,19 @@ class CallForest(object):
                  n_predictors,
                  oob_score,
                  feature_importance,
-                 **kwargs):
+                 #**kwargs,
+                 class_weight=None):
         self.n_trees = n_trees
         self.n_predictors = n_predictors
         self.oob_score = oob_score
         self.feature_importance = feature_importance
+        self.class_weight = class_weight
+
         self.is_classifier = rf_type is 'classifier'
 
         if self.is_classifier:
             self.called_method = test_class_tree_bags
-            self.class_weight = kwargs['class_weight']
+            # self.class_weight = kwargs['class_weight']
         else:
             self.called_method = test_regress_tree_bags
 
