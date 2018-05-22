@@ -10,20 +10,28 @@ from sklearn.utils.multiclass import unique_labels
 
 
 class CallForest(object):
-    def __init__(self, rf_type, n_trees, n_predictors, oob_score, feature_importance, **kwargs):
+    def __init__(self,
+                 rf_type,
+                 n_trees,
+                 n_predictors,
+                 oob_score,
+                 feature_importance,
+                 **kwargs):
         self.n_trees = n_trees
         self.n_predictors = n_predictors
         self.oob_score = oob_score
         self.feature_importance = feature_importance
-        self.isclassifier = rf_type is 'classifier'
-        if self.isclassifier:
+        self.is_classifier = rf_type is 'classifier'
+
+        if self.is_classifier:
             self.called_method = test_class_tree_bags
             self.class_weight = kwargs['class_weight']
         else:
             self.called_method = test_regress_tree_bags
 
     def train_method(self, all_data, X_train, y_train, X_test, y_test):
-        if self.isclassifier:
+        if self.is_classifier:
+
             return self.called_method(all_data=all_data,
                                       training_data=X_train,
                                       training_groups=y_train,
@@ -35,6 +43,7 @@ class CallForest(object):
                                       feature_importance=self.feature_importance,
                                       class_weight=self.class_weight)
         else:
+
             return self.called_method(all_data=all_data,
                                       training_data=X_train,
                                       training_groups=y_train,
@@ -139,6 +148,7 @@ def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repea
                sorted(allfolds_feature_importance.items(), key=lambda x: x[1], reverse=True)
 
     else:
+
         return out_df, all_accuracies, all_prox_mat, all_group_accuracies
 
 
@@ -153,6 +163,7 @@ def get_feature_importance(model, training_data):
     features_dict = {}
     for i in range(len(model.feature_importances_)):
         features_dict[list(training_data)[i]] = model.feature_importances_[i]
+
     return features_dict
 
 
@@ -204,8 +215,7 @@ def classification_summary(y_true, y_pred,
     if target_names is not None and len(labels) != len(target_names):
         warnings.warn(
             "labels size, {0}, does not match size of target_names, {1}"
-                .format(len(labels), len(target_names))
-        )
+                .format(len(labels), len(target_names)))
 
     last_line_heading = 'avg / total'
 
