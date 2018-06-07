@@ -16,46 +16,37 @@ class CallForest(object):
                  n_predictors,
                  oob_score,
                  feature_importance,
-                 #**kwargs,
                  class_weight=None):
+        self.rf_type = rf_type
         self.n_trees = n_trees
         self.n_predictors = n_predictors
         self.oob_score = oob_score
         self.feature_importance = feature_importance
         self.class_weight = class_weight
-
-        self.is_classifier = rf_type is 'classifier'
-
-        if self.is_classifier:
-            self.called_method = test_class_tree_bags
-            # self.class_weight = kwargs['class_weight']
-        else:
-            self.called_method = test_regress_tree_bags
+        self.is_classifier = self.rf_type is 'classifier'
 
     def train_method(self, all_data, X_train, y_train, X_test, y_test):
         if self.is_classifier:
-
-            return self.called_method(all_data=all_data,
-                                      training_data=X_train,
-                                      training_groups=y_train,
-                                      testing_data=X_test,
-                                      testing_groups=y_test,
-                                      n_trees=self.n_trees,
-                                      n_predictors=self.n_predictors,
-                                      oob_score=self.oob_score,
-                                      feature_importance=self.feature_importance,
-                                      class_weight=self.class_weight)
+            return test_class_tree_bags(all_data=all_data,
+                                        training_data=X_train,
+                                        training_groups=y_train,
+                                        testing_data=X_test,
+                                        testing_groups=y_test,
+                                        n_trees=self.n_trees,
+                                        n_predictors=self.n_predictors,
+                                        oob_score=self.oob_score,
+                                        feature_importance=self.feature_importance,
+                                        class_weight=self.class_weight)
         else:
-
-            return self.called_method(all_data=all_data,
-                                      training_data=X_train,
-                                      training_groups=y_train,
-                                      testing_data=X_test,
-                                      testing_groups=y_test,
-                                      n_trees=self.n_trees,
-                                      n_predictors=self.n_predictors,
-                                      oob_score=self.oob_score,
-                                      feature_importance=self.feature_importance)
+            return test_regress_tree_bags(all_data=all_data,
+                                          training_data=X_train,
+                                          training_groups=y_train,
+                                          testing_data=X_test,
+                                          testing_groups=y_test,
+                                          n_trees=self.n_trees,
+                                          n_predictors=self.n_predictors,
+                                          oob_score=self.oob_score,
+                                          feature_importance=self.feature_importance)
 
 
 def build_kfolds(df, data_cols, target_cols, forest_params, n_splits=10, n_repeats=3):
@@ -323,7 +314,7 @@ def test_class_tree_bags(all_data, training_data, training_groups, testing_data,
     if feature_importance:
         return_list.append(get_feature_importance(tree_bag, training_data))
 
-    return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy,\
+    return predicted_classes, predicted_scores, overall_accuracy, individual_accuracy, prox_mat, group_accuracy, \
            (*return_list)
 
 
@@ -386,9 +377,7 @@ def interface(df, data_cols, target_cols,
               class_weight=None,
               n_kfold_splits=10,
               n_kfold_repeats=3):
-
-    forest_params = CallForest(df=df,
-                               rf_type=rf_type,
+    forest_params = CallForest(rf_type=rf_type,
                                n_trees=n_trees,
                                n_predictors=n_predictors,
                                oob_score=oob_score,
@@ -396,7 +385,7 @@ def interface(df, data_cols, target_cols,
                                class_weight=class_weight)
 
     if oob_score and feature_importance:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score, allfolds_feature_importance =\
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score, allfolds_feature_importance = \
             build_kfolds(df, data_cols, target_cols, forest_params,
                          n_splits=n_kfold_splits,
                          n_repeats=n_kfold_repeats)
@@ -409,7 +398,7 @@ def interface(df, data_cols, target_cols,
               'Feature Importance:', allfolds_feature_importance)
 
     elif oob_score and not feature_importance:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score =\
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_oob_score = \
             build_kfolds(df, data_cols, target_cols, forest_params,
                          n_splits=n_kfold_splits,
                          n_repeats=n_kfold_repeats)
@@ -421,7 +410,7 @@ def interface(df, data_cols, target_cols,
               'Oob Score:', allfolds_oob_score)
 
     elif feature_importance and not oob_score:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_feature_importance =\
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies, allfolds_feature_importance = \
             build_kfolds(df, data_cols, target_cols, forest_params,
                          n_splits=n_kfold_splits,
                          n_repeats=n_kfold_repeats)
@@ -433,7 +422,7 @@ def interface(df, data_cols, target_cols,
               'Feature Importance:', allfolds_feature_importance)
 
     else:
-        out_df, all_accuracies, all_prox_mat, all_group_accuracies =\
+        out_df, all_accuracies, all_prox_mat, all_group_accuracies = \
             build_kfolds(df, data_cols, target_cols, forest_params,
                          n_splits=n_kfold_splits,
                          n_repeats=n_kfold_repeats)
